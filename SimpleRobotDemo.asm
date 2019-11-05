@@ -61,6 +61,38 @@ WaitForUser:
 	OUT    XLEDS       ; clear LEDs once ready to continue
 
 ;***************************************************************
+; START CIRCLE CODE
+Circle:
+	LOAD   Zero
+	ADDI   90
+	STORE  DTheta
+	CALL   ControlMovement
+	OUT    TIMER
+	JUMP   CircleLoop
+
+CircleLoop:
+	LOADI  511
+	OUT    LVELCMD
+	ADDI   -223
+	OUT    RVELCMD
+	IN     TIMER
+	ADDI   -63
+	JZERO  CircleEnd
+	JUMP   CircleLoop
+
+CircleEnd:
+	LOAD   Zero
+	ADDI   90
+	STORE  DTheta
+	CALL   ControlMovement
+
+CircleFreeze: 
+	JUMP   CircleFreeze
+; END CIRCLE CODE
+;***************************************************************
+
+	
+;***************************************************************
 ;* Main code
 ;***************************************************************
 Main:
