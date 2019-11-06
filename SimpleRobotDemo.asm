@@ -60,22 +60,55 @@ WaitForUser:
 	LOAD   Zero
 	OUT    XLEDS       ; clear LEDs once ready to continue
 
+;Main:
+	OUT    RESETPOS    ; reset the odometry to 0,0,0
+	; configure timer interrupt for the movement control code
+	LOADI  10          ; period = (10 ms * 10) = 0.1s, or 10Hz.
+	OUT    CTIMER      ; turn on timer peripheral
+	SEI    &B0010      ; enable interrupts from source 2 (timer)
+	
 ;***************************************************************
 ; START FIND CODE
 ;***************************************************************
 	LOADI	1
 	OUT		SSEG1
 Find:
+	LOAD	ZERO
+	ADDI	610
+	ADDI	609
+	ADDI	610
+	ADDI	609
+	OUT		SONALARM
+	STORE	FOUNDREFLECTOR
+	
 	LOADI  32
+	;LOAD	MASK5
+	;OR		MASK6
 	OUT	   SONAREN
-	LOAD   Five
+	LOADI   100
 	STORE  DVel
 FindLoop:
-	LOAD   DIST5
-	ADDI   -2438
-	JNEG   Stop
-	OUT	   TIMER
-	JUMP   FindLoop
+	IN		SONALARM
+	ADDI	-32
+	JZERO	GetClose
+	JUMP 	FindLoop
+GetClose:
+	IN		DIST5
+	OUT		SSEG1
+	SUB		FOUNDREFLECTOR
+	ADDI	-90
+	JPOS	Stop
+	ADDI	90
+	ADD		FOUNDREFLECTOR
+	STORE	FOUNDREFLECTOR
+	JUMP	GetClose
+Found:
+	LOAD	FOUNDREFLECTOR
+	ADDI	1
+	STORE   FOUNDREFLECTOR
+	ADDI    -10
+	JPOS    Stop
+	JUMP    Found
 Stop:
 	LOAD   Zero
 	STORE  DVel
@@ -88,23 +121,35 @@ Stop:
 ;***************************************************************
 	LOADI	2
 	OUT		SSEG1
+	OUT		RESETPOS
 Turn90: 
-	LOADI 	100
-	OUT 	LVELCMD
-	ADDI 	-200
-	OUT 	RVELCMD
-	JUMP 	CheckAngleCW
-CheckAngleCW: 
-	IN 		THETA
-	ADDI 	-270
-	JZERO 	EndCheckAngle
-	JPOS 	Turn90
+	LOADI	270
+	STORE	DTHETA
+	LOADI	0
+	STORE	DVEL
+	;LOADI 	100
+	;OUT 	LVELCMD
+	;ADDI 	-200
+	;OUT 	RVELCMD
+	;JUMP 	CheckAngleCW
+CheckAngleCW:
+	IN     Theta
+	ADDI   -270
+	CALL   Abs         ; get abs(currentAngle - 90)
+	ADDI   -3
+	JPOS   CheckAngleCW    ; if angle error > 3, keep checking
+	; at this point, robot should be within 3 degrees of 90
+	;IN 		THETA
+	;ADDI 	-270
+	;JZERO 	EndCheckAngle
+	;JNEG 	Turn90
 	
 EndCheckAngle:
 	OUT		RESETPOS
 ;***************************************************************
 ; END TURN AND FACE CODE
 ;***************************************************************
+	CLI    &B0010
 
 ;***************************************************************
 	LOADI	3
@@ -112,24 +157,25 @@ EndCheckAngle:
 ; GO UNTIL WITHIN 1 FT CODE
 Move1:
 	;LOADI	0b00000110
-	LOAD	MASK1
-	OR		MASK2
+	LOAD	MASK2
+	;OR		MASK2
 	OUT		SONAREN
 	
 	LOADI	305			; 305 mm = 1 ft
+	;ADDI	145
 	OUT		SONALARM
 
 LoopMove1:
-	; if object within 1 ft in front, stop
+	; if object within 1.5 ft in front, stop
 	IN		SONALARM
-	SUB		MASK1
-	JZERO	FinMove1
-	ADD		MASK1
 	SUB		MASK2
 	JZERO	FinMove1
+	;ADD		MASK1
+	;SUB		MASK2
+	;JZERO	FinMove1
 	
 	; else, move forward again
-	LOADI	10
+	LOADI	100
 	OUT		LVELCMD
 	OUT		RVELCMD
 	JUMP	LoopMove1
@@ -139,37 +185,52 @@ FinMove1:
 
 ; END GO UNTIL WITHIN 1 FT CODE
 ;***************************************************************
-
+	OUT    RESETPOS    ; reset the odometry to 0,0,0
+	; configure timer interrupt for the movement control code
+	LOADI  10          ; period = (10 ms * 10) = 0.1s, or 10Hz.
+	OUT    CTIMER      ; turn on timer peripheral
+	SEI    &B0010      ; enable interrupts from source 2 (timer)
 ;***************************************************************
 ; START CIRCLE CODE
+	OUT		RESETPOS
+TurnCircle: 
 	LOADI	4
 	OUT		SSEG1
+	
+	LOADI	90
+	STORE	DTHETA
+	LOADI	0
+	STORE	DVEL
+	;LOADI 	100
+	;OUT 	LVELCMD
+	;ADDI 	-200
+	;OUT 	RVELCMD
+	;JUMP 	CheckAngleCW
+CheckAngleCircle:
+	IN     Theta
+	ADDI   -90
+	CALL   Abs         ; get abs(currentAngle - 90)
+	ADDI   -3
+	JPOS   CheckAngleCircle    ; if angle error > 3, keep checking
+	; at this point, robot should be within 3 degrees of 90
+	
+STARTTHETA:  DW &H0000
 Circle:
-	LOAD   Zero
-	ADDI   90
-	STORE  DTheta
-	CALL   ControlMovement
-	OUT    TIMER
-	JUMP   CircleLoop
-
+    IN     THETA
+    ADDI   60
+    STORE  STARTTHETA
 CircleLoop:
 	LOADI  511
 	OUT    LVELCMD
 	ADDI   -223
-	OUT    RVELCMD
-	IN     TIMER
-	ADDI   -63
-	JZERO  CircleEnd
-	JUMP   CircleLoop
-
+    OUT    RVELCMD
+    IN     THETA
+    SUB    STARTTHETA
+    OUT    SSEG2
+    JZERO  CircleEnd
+    JUMP   CircleLoop
 CircleEnd:
-	LOAD   Zero
-	ADDI   90
-	STORE  DTheta
-	CALL   ControlMovement
-
-CircleFreeze: 
-	JUMP   CircleFreeze
+    JUMP CircleEnd
 ; END CIRCLE CODE
 ;***************************************************************
 
@@ -863,6 +924,7 @@ I2CRCmd:  DW &H0190    ; write nothing, read one byte, addr 0x90
 
 DataArray:
 	DW 0
+FOUNDREFLECTOR:	DW 0
 ;***************************************************************
 ;* IO address space map
 ;***************************************************************
