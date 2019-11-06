@@ -63,6 +63,8 @@ WaitForUser:
 ;***************************************************************
 ; START FIND CODE
 ;***************************************************************
+	LOADI	1
+	OUT		SSEG1
 Find:
 	LOADI  32
 	OUT	   SONAREN
@@ -84,6 +86,8 @@ Stop:
 ;***************************************************************
 ; START TURN AND FACE CODE
 ;***************************************************************
+	LOADI	2
+	OUT		SSEG1
 Turn90: 
 	LOADI 	100
 	OUT 	LVELCMD
@@ -93,13 +97,18 @@ Turn90:
 CheckAngleCW: 
 	IN 		THETA
 	ADDI 	-270
-	JZERO 	RESETPOS
+	JZERO 	EndCheckAngle
 	JPOS 	Turn90
+	
+EndCheckAngle:
+	OUT		RESETPOS
 ;***************************************************************
 ; END TURN AND FACE CODE
 ;***************************************************************
 
 ;***************************************************************
+	LOADI	3
+	OUT		SSEG1
 ; GO UNTIL WITHIN 1 FT CODE
 Move1:
 	;LOADI	0b00000110
@@ -133,6 +142,8 @@ FinMove1:
 
 ;***************************************************************
 ; START CIRCLE CODE
+	LOADI	4
+	OUT		SSEG1
 Circle:
 	LOAD   Zero
 	ADDI   90
