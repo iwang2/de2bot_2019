@@ -61,6 +61,77 @@ WaitForUser:
 	OUT    XLEDS       ; clear LEDs once ready to continue
 
 ;***************************************************************
+; START FIND CODE
+;***************************************************************
+Find:
+	LOADI  32
+	OUT	   SONAREN
+	LOAD   Five
+	STORE  DVel
+FindLoop:
+	LOAD   DIST5
+	ADDI   -2438
+	JNEG   Stop
+	OUT	   TIMER
+	JUMP   FindLoop
+Stop:
+	LOAD   Zero
+	STORE  DVel
+;***************************************************************
+; END FIND CODE
+;***************************************************************
+
+;***************************************************************
+; START TURN AND FACE CODE
+;***************************************************************
+Turn90: 
+	LOADI 	100
+	OUT 	LVELCMD
+	ADDI 	-200
+	OUT 	RVELCMD
+	JUMP 	CheckAngleCW
+CheckAngleCW: 
+	IN 		THETA
+	ADDI 	-270
+	JZERO 	RESETPOS
+	JPOS 	Turn90
+;***************************************************************
+; END TURN AND FACE CODE
+;***************************************************************
+
+;***************************************************************
+; GO UNTIL WITHIN 1 FT CODE
+Move1:
+	;LOADI	0b00000110
+	LOAD	MASK1
+	OR		MASK2
+	OUT		SONAREN
+	
+	LOADI	305			; 305 mm = 1 ft
+	OUT		SONALARM
+
+LoopMove1:
+	; if object within 1 ft in front, stop
+	IN		SONALARM
+	SUB		MASK1
+	JZERO	FinMove1
+	ADD		MASK1
+	SUB		MASK2
+	JZERO	FinMove1
+	
+	; else, move forward again
+	LOADI	10
+	OUT		LVELCMD
+	OUT		RVELCMD
+	JUMP	LoopMove1
+	
+FinMove1:
+	;JUMP	FinMove1
+
+; END GO UNTIL WITHIN 1 FT CODE
+;***************************************************************
+
+;***************************************************************
 ; START CIRCLE CODE
 Circle:
 	LOAD   Zero
@@ -92,45 +163,6 @@ CircleFreeze:
 ;***************************************************************
 
 ;***************************************************************
-; START TURN AND FACE CODE
-;***************************************************************
-Turn90: 
-	LOADI 	100
-	OUT 	LVELCMD
-	ADDI 	-200
-	OUT 	RVELCMD
-	JUMP 	CheckAngleCW
-CheckAngleCW: 
-	IN 		THETA
-	ADDI 	-270
-	JZERO 	RESETPOS
-	JPOS 	Turn90
-;***************************************************************
-; END TURN AND FACE CODE
-;***************************************************************
-
-;***************************************************************
-; START FIND CODE
-;***************************************************************
-Find:
-	LOADI  32
-	OUT	   SONAREN
-	LOAD   Five
-	STORE  DVel
-FindLoop:
-	LOAD   DIST5
-	ADDI   -2438
-	JNEG   Stop
-	OUT	   TIMER
-	JUMP   FindLoop
-Stop:
-	LOAD   Zero
-	STORE  DVel
-;***************************************************************
-; END FIND CODE
-;***************************************************************
-
-;***************************************************************
 ;* Main code
 ;***************************************************************
 Main:
@@ -147,7 +179,6 @@ Main:
 	;LOADI  &B00100000
 	;OUT    SONARINT
 	
-	;LOADI  &B00100000
 	LOADI  32
 	OUT	   SONAREN
 	
@@ -162,19 +193,10 @@ Check:
 	;STORE  DTheta  s    ; use API to get robot to face 90 degrees
 	IN	   DIST5
 	OUT    SSEG1
-	;ADDI   -100
 	IN     SONALARM
 	ADDI   -32
 	JZERO  InfLoop
 	JUMP   Turn
-	
-	JNEG   InfLoop
-	JUMP   Turn
-	JUMP   Check
-	LOAD   Zero
-	STORE  DTheta
-	STORE  DVel
-	JUMP   InfLoop
 	
 Turn:
 	IN     DIST5
