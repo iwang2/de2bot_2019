@@ -149,7 +149,7 @@ EndCheckAngle:
 ;***************************************************************
 ; END TURN AND FACE CODE
 ;***************************************************************
-	CLI    &B0010
+	CLI    &B0010 ; disable movement API
 
 ;***************************************************************
 	LOADI	3
@@ -182,6 +182,18 @@ LoopMove1:
 	
 FinMove1:
 	;JUMP	FinMove1
+	IN		XPOS
+	STORE	linedist	; store odometry distance traveled from line
+	IN		MASK2
+	OR		MASK3
+	OUT		SONAREN
+	IN		DIST2
+	OUT		s2dist		; store distance from reflector to s2
+	IN		DIST3
+	OUT		s3dist		; store distance from reflector to s3
+	
+	LOADI	0
+	OUT		SONAREN		; turn off sensors
 
 ; END GO UNTIL WITHIN 1 FT CODE
 ;***************************************************************
@@ -201,11 +213,7 @@ TurnCircle:
 	STORE	DTHETA
 	LOADI	0
 	STORE	DVEL
-	;LOADI 	100
-	;OUT 	LVELCMD
-	;ADDI 	-200
-	;OUT 	RVELCMD
-	;JUMP 	CheckAngleCW
+
 CheckAngleCircle:
 	IN     Theta
 	ADDI   -90
@@ -232,6 +240,63 @@ CircleLoop:
 CircleEnd:
     JUMP CircleEnd
 ; END CIRCLE CODE
+;***************************************************************
+
+;***************************************************************
+;* START RETURN TO LINE CODE
+
+; assumes robot is facing reflector
+	;LOAD	s2dist
+	;OUT		SONALARM
+	LOAD	MASK2
+	OUT		SONAREN
+	
+CheckBackDist:
+	IN		DIST2
+	SUB		s2dist
+	JPOS	TurnBack
+	
+MoveBack:
+	LOADI	-100
+	OUT		LVELCMD
+	OUT		RVELCMD
+	JUMP	CheckBackDist
+
+TurnBack:
+	CALL 	TurnLeft90
+	JUMP	InfLoop
+
+;* END RETURN TO LINE CODE
+;***************************************************************
+
+;***************************************************************
+; TurnLeft90Degrees
+TurnLeft90:
+	OUT    RESETPOS    ; reset the odometry to 0,0,0
+	; configure timer interrupt for the movement control code
+	LOADI  10          ; period = (10 ms * 10) = 0.1s, or 10Hz.
+	OUT    CTIMER      ; turn on timer peripheral
+	SEI    &B0010      ; enable interrupts from source 2 (timer)
+	OUT		RESETPOS
+
+	LOADI	4
+	OUT		SSEG1
+	
+	LOADI	90
+	STORE	DTHETA
+	LOADI	0
+	STORE	DVEL
+
+CheckAngle90:
+	IN     Theta
+	ADDI   -90
+	CALL   Abs         ; get abs(currentAngle - 90)
+	ADDI   -3
+	JPOS   CheckAngle90    ; if angle error > 3, keep checking
+	; at this point, robot should be within 3 degrees of 90
+	RETURN
+	
+; End TurnLeft90Degrees
 ;***************************************************************
 
 ;***************************************************************
@@ -870,6 +935,12 @@ I2CError:
 ;***************************************************************
 Temp:     DW 0 ; "Temp" is not a great name, but can be useful
 
+FOUNDREFLECTOR:	DW 0
+
+linedist:	DW 0
+s2dist:		DW 0
+s3dist:		DW 0
+
 ;***************************************************************
 ;* Constants
 ;* (though there is nothing stopping you from writing to these)
@@ -902,29 +973,29 @@ LowByte:  DW &HFF      ; binary 00000000 1111111
 LowNibl:  DW &HF       ; 0000 0000 0000 1111
 
 ; some useful movement values
-OneMeter: DW 961       ; ~1m in 1.04mm units
-HalfMeter: DW 481      ; ~0.5m in 1.04mm units
-Ft2:      DW 586       ; ~2ft in 1.04mm units
-Ft3:      DW 879
-Ft4:      DW 1172
-Deg90:    DW 90        ; 90 degrees in odometer units
-Deg180:   DW 180       ; 180
-Deg270:   DW 270       ; 270
-Deg360:   DW 360       ; can never actually happen; for math only
-FSlow:    DW 100       ; 100 is about the lowest velocity value that will move
-RSlow:    DW -100
-FMid:     DW 350       ; 350 is a medium speed
-RMid:     DW -350
-FFast:    DW 500       ; 500 is almost max speed (511 is max)
-RFast:    DW -500
+OneMeter:	DW 961       ; ~1m in 1.04mm units
+HalfMeter:	DW 481      ; ~0.5m in 1.04mm units
+Ft2:		DW 586       ; ~2ft in 1.04mm units
+Ft3:		DW 879
+Ft4:		DW 1172
+Deg90:		DW 90        ; 90 degrees in odometer units
+Deg180:		DW 180       ; 180
+Deg270: 	DW 270       ; 270
+Deg360:		DW 360       ; can never actually happen; for math only
+FSlow:		DW 100       ; 100 is about the lowest velocity value that will move
+RSlow:    	DW -100
+FMid:     	DW 350       ; 350 is a medium speed
+RMid:     	DW -350
+FFast:    	DW 500       ; 500 is almost max speed (511 is max)
+RFast:    	DW -500
 
-MinBatt:  DW 140       ; 14.0V - minimum safe battery voltage
-I2CWCmd:  DW &H1190    ; write one i2c byte, read one byte, addr 0x90
-I2CRCmd:  DW &H0190    ; write nothing, read one byte, addr 0x90
+MinBatt:  	DW 140       ; 14.0V - minimum safe battery voltage
+I2CWCmd:	DW &H1190    ; write one i2c byte, read one byte, addr 0x90
+I2CRCmd:  	DW &H0190    ; write nothing, read one byte, addr 0x90
 
 DataArray:
 	DW 0
-FOUNDREFLECTOR:	DW 0
+
 ;***************************************************************
 ;* IO address space map
 ;***************************************************************
