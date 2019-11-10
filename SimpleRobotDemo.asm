@@ -121,7 +121,9 @@ Stop:
 ;***************************************************************
 	LOADI	2
 	OUT		SSEG1
-	OUT		RESETPOS
+	;OUT		RESETPOS
+	IN		Theta
+	STORE	StartTheta
 Turn90: 
 	LOADI	270
 	STORE	DTHETA
@@ -133,11 +135,12 @@ Turn90:
 	;OUT 	RVELCMD
 	;JUMP 	CheckAngleCW
 CheckAngleCW:
-	IN     Theta
-	ADDI   -270
-	CALL   Abs         ; get abs(currentAngle - 90)
-	ADDI   -3
-	JPOS   CheckAngleCW    ; if angle error > 3, keep checking
+	IN     	Theta
+	SUB		StartTheta
+	ADDI   	-270
+	CALL  	 Abs         ; get abs(currentAngle - 90)
+	ADDI   	-3
+	JPOS   	CheckAngleCW    ; if angle error > 3, keep checking
 	; at this point, robot should be within 3 degrees of 90
 	;IN 		THETA
 	;ADDI 	-270
@@ -145,7 +148,7 @@ CheckAngleCW:
 	;JNEG 	Turn90
 	
 EndCheckAngle:
-	OUT		RESETPOS
+	;OUT		RESETPOS
 ;***************************************************************
 ; END TURN AND FACE CODE
 ;***************************************************************
@@ -185,17 +188,19 @@ FinMove1:
 
 ; END GO UNTIL WITHIN 1 FT CODE
 ;***************************************************************
-	OUT    RESETPOS    ; reset the odometry to 0,0,0
+	;OUT    RESETPOS    ; reset the odometry to 0,0,0
 	; configure timer interrupt for the movement control code
 	LOADI  10          ; period = (10 ms * 10) = 0.1s, or 10Hz.
 	OUT    CTIMER      ; turn on timer peripheral
 	SEI    &B0010      ; enable interrupts from source 2 (timer)
 ;***************************************************************
 ; START CIRCLE CODE
-	OUT		RESETPOS
+	;OUT		RESETPOS
 TurnCircle: 
 	LOADI	4
 	OUT		SSEG1
+	IN		Theta
+	STORE	StartTheta
 	
 	LOADI	90
 	STORE	DTHETA
@@ -207,11 +212,12 @@ TurnCircle:
 	;OUT 	RVELCMD
 	;JUMP 	CheckAngleCW
 CheckAngleCircle:
-	IN     Theta
-	ADDI   -90
-	CALL   Abs         ; get abs(currentAngle - 90)
-	ADDI   -3
-	JPOS   CheckAngleCircle    ; if angle error > 3, keep checking
+	IN    	Theta
+	SUB		StartTheta
+	ADDI   	-90
+	CALL   	Abs         ; get abs(currentAngle - 90)
+	ADDI   	-3
+	JPOS   	CheckAngleCircle    ; if angle error > 3, keep checking
 	; at this point, robot should be within 3 degrees of 90
 	
 STARTTHETA:  DW &H0000
@@ -925,6 +931,7 @@ I2CRCmd:  DW &H0190    ; write nothing, read one byte, addr 0x90
 DataArray:
 	DW 0
 FOUNDREFLECTOR:	DW 0
+StartTheta:		DW 0
 ;***************************************************************
 ;* IO address space map
 ;***************************************************************
