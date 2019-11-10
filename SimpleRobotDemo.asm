@@ -159,10 +159,11 @@ EndCheckAngle:
 	OUT		SSEG1
 ; GO UNTIL WITHIN 1 FT CODE
 Move1:
-	;LOADI	0b00000110
 	LOAD	MASK2
-	;OR		MASK2
+	;OR		MASK3
 	OUT		SONAREN
+	IN		DIST2
+	OUT		s2dist		; store distance from reflector to s2
 	
 	LOADI	305			; 305 mm = 1 ft
 	;ADDI	145
@@ -185,15 +186,9 @@ LoopMove1:
 	
 FinMove1:
 	;JUMP	FinMove1
-	IN		XPOS
-	STORE	linedist	; store odometry distance traveled from line
-	IN		MASK2
-	OR		MASK3
-	OUT		SONAREN
-	IN		DIST2
-	OUT		s2dist		; store distance from reflector to s2
-	IN		DIST3
-	OUT		s3dist		; store distance from reflector to s3
+	;IN		XPOS
+	;STORE	linedist	; store odometry distance traveled from line
+	
 	
 	LOADI	0
 	OUT		SONAREN		; turn off sensors
@@ -249,7 +244,8 @@ CircleEnd:
 
 ;***************************************************************
 ;* START RETURN TO LINE CODE
-
+	LOADI	5
+	OUT		SSEG1
 ; assumes robot is facing reflector
 	;LOAD	s2dist
 	;OUT		SONALARM
