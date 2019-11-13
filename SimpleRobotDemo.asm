@@ -376,7 +376,7 @@ Forever:
 ; Timer ISR.  Currently just calls the movement control code.
 ; You could, however, do additional tasks here if desired.
 CTimer_ISR:
-	;CALL   CheckForWall
+	CALL   CheckForWall
 	CALL   ControlMovement
 	RETI   ; return from ISR
 	
