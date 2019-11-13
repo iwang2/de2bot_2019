@@ -67,6 +67,7 @@ WaitForUser:
 	OUT    CTIMER      ; turn on timer peripheral
 	SEI    &B0010      ; enable interrupts from source 2 (timer)
 	
+
 ;***************************************************************
 ; START FIND CODE
 ;***************************************************************
@@ -76,8 +77,8 @@ Find:
 	LOAD	ZERO
 	ADDI	610
 	ADDI	609
-	ADDI	610
-	ADDI	609
+	;ADDI	610
+	;ADDI	609
 	OUT		SONALARM
 	STORE	FOUNDREFLECTOR
 	
@@ -94,12 +95,18 @@ FindLoop:
 	JZERO	GetClose
 	JUMP 	FindLoop
 GetClose:
-	IN		DIST5
+	IN		DIST4
 	STORE 	FOUNDREFLECTOR
-	IN 		DIST4
+	;ADDI	-610
+	;ADDI 	-609
+	;JPOS	GetClose
+GoForward:
+	IN 		DIST5
 	SUB		FOUNDREFLECTOR
-	JPOS	Found
-	JUMP	GetClose
+	ADDI	20
+	OUT		SSEG1
+	JNEG	Stop
+	JUMP	GoForward
 	;OUT		SSEG1
 	;SUB		FOUNDREFLECTOR
 	;ADDI	-95
@@ -209,7 +216,7 @@ FinMove1:
 	
 Circle:
     IN     THETA
-    ADDI   60
+    ADDI   30
     STORE  STARTTHETA
 CircleLoop:
 	LOADI  511
