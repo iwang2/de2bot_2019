@@ -85,7 +85,8 @@ Find:
 	;LOAD	MASK5
 	;OR		MASK6
 	OUT	   SONAREN
-	LOADI   100
+	;LOADI   100
+	LOAD	FMid
 	STORE  DVel
 FindLoop:
 	IN		SONALARM
@@ -94,14 +95,22 @@ FindLoop:
 	JUMP 	FindLoop
 GetClose:
 	IN		DIST5
-	OUT		SSEG1
+	STORE 	FOUNDREFLECTOR
+	IN 		DIST4
 	SUB		FOUNDREFLECTOR
-	ADDI	-90
-	JPOS	Stop
-	ADDI	90
-	ADD		FOUNDREFLECTOR
-	STORE	FOUNDREFLECTOR
+	JPOS	Found
 	JUMP	GetClose
+	;OUT		SSEG1
+	;SUB		FOUNDREFLECTOR
+	;ADDI	-95
+	;JPOS	Stop
+	;ADDI	95
+	;ADD		FOUNDREFLECTOR
+	;STORE	FOUNDREFLECTOR
+	;JUMP	GetClose
+	;IN		SONALARM
+	;JZERO	Stop
+	;JUMP	GetClose
 Found:
 	LOAD	FOUNDREFLECTOR
 	ADDI	1
@@ -193,35 +202,10 @@ FinMove1:
 	LOADI	0
 	OUT		SONAREN		; turn off sensors
 
-; END GO UNTIL WITHIN 1 FT CODE
 ;***************************************************************
-	;OUT    RESETPOS    ; reset the odometry to 0,0,0
-	; configure timer interrupt for the movement control code
-	LOADI  10          ; period = (10 ms * 10) = 0.1s, or 10Hz.
-	OUT    CTIMER      ; turn on timer peripheral
-	SEI    &B0010      ; enable interrupts from source 2 (timer)
-;***************************************************************
-; START CIRCLE CODE
-	;OUT		RESETPOS
-TurnCircle: 
-	LOADI	4
-	OUT		SSEG1
-	IN		Theta
-	STORE	StartTheta
-	
-	LOADI	90
-	STORE	DTHETA
-	LOADI	0
-	STORE	DVEL
-
-CheckAngleCircle:
-	IN    	Theta
-	SUB		StartTheta
-	ADDI   	-90
-	CALL   	Abs         ; get abs(currentAngle - 90)
-	ADDI   	-3
-	JPOS   	CheckAngleCircle    ; if angle error > 3, keep checking
-	; at this point, robot should be within 3 degrees of 90
+;START CIRCLE CODE
+	CALL	TurnLeft90
+;circle code from notepad
 	
 Circle:
     IN     THETA
@@ -230,7 +214,7 @@ Circle:
 CircleLoop:
 	LOADI  511
 	OUT    LVELCMD
-	ADDI   -223
+	ADDI   -220
     OUT    RVELCMD
     IN     THETA
     SUB    STARTTHETA
@@ -283,7 +267,7 @@ TurnLeft90:
 	LOADI	4
 	OUT		SSEG1
 	
-	LOADI	90
+	LOADI	85
 	STORE	DTHETA
 	LOADI	0
 	STORE	DVEL
@@ -385,7 +369,7 @@ Forever:
 ; Timer ISR.  Currently just calls the movement control code.
 ; You could, however, do additional tasks here if desired.
 CTimer_ISR:
-	CALL   CheckForWall
+	;CALL   CheckForWall
 	CALL   ControlMovement
 	RETI   ; return from ISR
 	
@@ -401,8 +385,8 @@ CheckForWall:
 	ADDI   	-610
 	ADDI   	-610
 	ADDI   	-610
-	ADDI   	-610
-	ADDI   	-610
+	;ADDI   	-610
+	;ADDI   	-610
 	JPOS   	ReachedEnd
 	RETURN
 ReachedEnd:
