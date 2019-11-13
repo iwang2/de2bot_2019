@@ -385,10 +385,56 @@ Forever:
 ; Timer ISR.  Currently just calls the movement control code.
 ; You could, however, do additional tasks here if desired.
 CTimer_ISR:
-	
+	CALL   CheckForWall
 	CALL   ControlMovement
 	RETI   ; return from ISR
 	
+;***********************************************************
+; Reached wall interrupt code
+;***********************************************************
+CheckForWall:
+	IN		XPOS
+	OUT		SSEG1
+	ADDI   	-610
+	ADDI   	-610
+	ADDI   	-610
+	ADDI   	-610
+	ADDI   	-610
+	ADDI   	-610
+	ADDI   	-610
+	ADDI   	-610
+	JPOS   	ReachedEnd
+	RETURN
+ReachedEnd:
+	ADDI   	-610
+	ADDI   	-610
+	ADDI   	-610
+	ADDI   	-610
+	ADDI   	-610
+	ADDI   	-610
+	ADDI   	-610
+	ADDI   	-610
+	JPOS   	ReachedStart
+	CALL   	TurnAtEnd
+	RETURN
+ReachedStart:
+	CALL	TurnAtEnd
+	OUT		RESETPOS
+	RETURN
+;************************************************************
+; End reached wall interrupt code
+;************************************************************
+
+;************************************************************
+; Turn at end code
+;************************************************************
+TurnAtEnd:
+	LOADI  	180
+	STORE	DTheta
+	RETURN
+;************************************************************
+; End turn at end code
+;************************************************************
 	
 ; Control code.  If called repeatedly, this code will attempt
 ; to control the robot to face the angle specified in DTheta
