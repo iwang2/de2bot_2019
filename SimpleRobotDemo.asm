@@ -77,13 +77,18 @@ Find:
 	LOAD	ZERO
 	ADDI	610
 	ADDI	609
+	;ADDI	610
+	;ADDI	609
 	OUT		SONALARM
 	STORE	FOUNDREFLECTOR
 	
-	LOADI	MASK5
-	OUT	   	SONAREN
+	LOADI  32
+	;LOAD	MASK5
+	;OR		MASK6
+	OUT	   SONAREN
+	;LOADI   100
 	LOAD	FMid
-	STORE  	DVel
+	STORE  DVel
 FindLoop:
 	IN		SONALARM
 	ADDI	-32
@@ -102,6 +107,17 @@ GoForward:
 	OUT		SSEG1
 	JNEG	Stop
 	JUMP	GoForward
+	;OUT		SSEG1
+	;SUB		FOUNDREFLECTOR
+	;ADDI	-95
+	;JPOS	Stop
+	;ADDI	95
+	;ADD		FOUNDREFLECTOR
+	;STORE	FOUNDREFLECTOR
+	;JUMP	GetClose
+	;IN		SONALARM
+	;JZERO	Stop
+	;JUMP	GetClose
 Found:
 	LOAD	FOUNDREFLECTOR
 	ADDI	1
@@ -121,7 +137,7 @@ Stop:
 ;***************************************************************
 	LOADI	2
 	OUT		SSEG1
-	;OUT		RESETPOS
+	OUT		RESETPOS
 	IN		Theta
 	STORE	StartTheta
 Turn90: 
@@ -152,7 +168,7 @@ EndCheckAngle:
 ;***************************************************************
 ; END TURN AND FACE CODE
 ;***************************************************************
-	;CLI    &B0010 ; disable movement API
+	CLI    &B0010 ; disable movement API
 
 ;***************************************************************
 	LOADI	3
@@ -163,33 +179,41 @@ Move1:
 	;OR		MASK3
 	OUT		SONAREN
 	IN		DIST2
-	STORE	s2dist		; store distance from reflector to s2
+	OUT		s2dist		; store distance from reflector to s2
 	
 	LOADI	305			; 305 mm = 1 ft
-	ADDI	150
+	;ADDI	145
 	OUT		SONALARM
-	
-	LOADI	200
-	STORE	DVEL
 
 LoopMove1:
 	; if object within 1.5 ft in front, stop
 	IN		SONALARM
 	SUB		MASK2
 	JZERO	FinMove1
+	;ADD		MASK1
+	;SUB		MASK2
+	;JZERO	FinMove1
+	
 	; else, move forward again
-	;LOADI	200
-	;OUT		LVELCMD
-	;OUT		RVELCMD
-	;JUMP	LoopMove1
+	LOADI	100
+	OUT		LVELCMD
+	OUT		RVELCMD
+	JUMP	LoopMove1
 	
 FinMove1:
+	;JUMP	FinMove1
+	;IN		XPOS
+	;STORE	linedist	; store odometry distance traveled from line
+	
+	
 	LOADI	0
-	STORE	DVEL
 	OUT		SONAREN		; turn off sensors
 
 ;***************************************************************
 ;START CIRCLE CODE
+	LOADI	4
+	OUT		SSEG1
+	OUT		RESETPOS
 	CALL	TurnLeft90
 ;circle code from notepad
 	CLI    &B0010
@@ -216,29 +240,24 @@ CircleEnd:
 ;* START RETURN TO LINE CODE
 	LOADI	5
 	OUT		SSEG1
-	
-	CALL	TurnLeft90
-	LOAD	YPOS
-	STORE	yinitial
-	
-	LOADI	200
-	STORE	DVEL
+; assumes robot is facing reflector
+	;LOAD	s2dist
+	;OUT		SONALARM
+	LOAD	MASK2
+	OUT		SONAREN
 	
 CheckBackDist:
-	LOAD	s2dist
-	ADD		yinitial
-	SUB		YPOS
-	JPOS	CheckBackDist
+	IN		DIST2
+	SUB		s2dist
+	JPOS	TurnBack
 	
-;MoveBack:
-	;LOADI	-100
-	;OUT		LVELCMD
-	;OUT		RVELCMD
-	;JUMP	CheckBackDist
+MoveBack:
+	LOADI	-100
+	OUT		LVELCMD
+	OUT		RVELCMD
+	JUMP	CheckBackDist
 
 TurnBack:
-	LOADI	0
-	STORE	DVEL
 	CALL 	TurnLeft90
 	JUMP	InfLoop
 
@@ -248,11 +267,12 @@ TurnBack:
 ;***************************************************************
 ; TurnLeft90Degrees
 TurnLeft90:
+	;OUT    RESETPOS    ; reset the odometry to 0,0,0
 	; configure timer interrupt for the movement control code
-	LOADI  10          ; period = (10 ms * 10) = 0.1s, or 10Hz.
-	OUT    CTIMER      ; turn on timer peripheral
+	;LOADI  10          ; period = (10 ms * 10) = 0.1s, or 10Hz.
+	;OUT    CTIMER      ; turn on timer peripheral
 	SEI    &B0010      ; enable interrupts from source 2 (timer)
-	;OUT		RESETPOS
+	OUT		RESETPOS
 	
 	LOADI	85
 	STORE	DTHETA
@@ -356,7 +376,7 @@ Forever:
 ; Timer ISR.  Currently just calls the movement control code.
 ; You could, however, do additional tasks here if desired.
 CTimer_ISR:
-	CALL   CheckForWall
+	;CALL   CheckForWall
 	CALL   ControlMovement
 	RETI   ; return from ISR
 	
@@ -960,7 +980,6 @@ StartTheta:		DW 0
 linedist:	DW 0
 s2dist:		DW 0
 s3dist:		DW 0
-yinitial:	DW 0
 
 ;***************************************************************
 ;* Constants
