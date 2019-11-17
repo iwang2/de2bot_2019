@@ -71,9 +71,10 @@ WaitForUser:
 ;***************************************************************
 ; START FIND CODE
 ;***************************************************************
+Find:
 	LOADI	1
 	OUT		SSEG1
-Find:
+	
 	LOAD	ZERO
 	ADDI	610
 	ADDI	609
@@ -140,28 +141,7 @@ Stop:
 	OUT		RESETPOS
 	IN		Theta
 	STORE	StartTheta
-Turn90: 
-	LOADI	270
-	STORE	DTHETA
-	LOADI	0
-	STORE	DVEL
-	;LOADI 	100
-	;OUT 	LVELCMD
-	;ADDI 	-200
-	;OUT 	RVELCMD
-	;JUMP 	CheckAngleCW
-CheckAngleCW:
-	IN     	Theta
-	SUB		StartTheta
-	ADDI   	-270
-	CALL  	 Abs         ; get abs(currentAngle - 90)
-	ADDI   	-3
-	JPOS   	CheckAngleCW    ; if angle error > 3, keep checking
-	; at this point, robot should be within 3 degrees of 90
-	;IN 		THETA
-	;ADDI 	-270
-	;JZERO 	EndCheckAngle
-	;JNEG 	Turn90
+	CALL	TurnRight90
 	
 EndCheckAngle:
 	OUT		RESETPOS
@@ -202,8 +182,8 @@ LoopMove1:
 	
 FinMove1:
 	;JUMP	FinMove1
-	;IN		XPOS
-	;STORE	linedist	; store odometry distance traveled from line
+	IN		XPOS
+	STORE	linedist	; store odometry distance traveled from line
 	
 	
 	LOADI	0
@@ -238,7 +218,7 @@ CircleLoop:
     JZERO  CircleEnd
     JUMP   CircleLoop
 CircleEnd:
-    JUMP CircleEnd
+    ;JUMP CircleEnd
 ; END CIRCLE CODE
 ;***************************************************************
 
@@ -246,30 +226,48 @@ CircleEnd:
 ;* START RETURN TO LINE CODE
 	LOADI	5
 	OUT		SSEG1
+	CALL	TurnLeft90
+	CLI		&B0010
 	OUT		RESETPOS
-; assumes robot is facing reflector
-	;LOAD	s2dist
-	;OUT		SONALARM
-	LOAD	MASK2
-	OUT		SONAREN
 	
-CheckBackDist:
-	IN		DIST2
-	SUB		s2dist
+CheckDist:
+	IN		XPOS
+	SUB		linedist
 	JPOS	TurnBack
-	
-MoveBack:
-	LOADI	-100
+	LOADI	200
 	OUT		LVELCMD
 	OUT		RVELCMD
-	JUMP	CheckBackDist
+	JUMP	CheckDist
 
 TurnBack:
-	CALL 	TurnLeft90
-	JUMP	InfLoop
+	SEI		&B0010
+	CALL 	TurnRight90
+	JUMP	Find
 
 ;* END RETURN TO LINE CODE
 ;***************************************************************
+
+;***************************************************************
+; TurnRight90Degrees
+TurnRight90:
+	IN		Theta
+	STORE	StartTheta
+	LOADI	270
+	STORE	DTHETA
+	LOADI	0
+	STORE	DVEL
+
+CheckAngleRight90:
+	IN		Theta
+	SUB		StartTheta
+	ADDI	-270
+	CALL	ABS
+	ADDI	-3
+	JPOS	CheckAngleRight90
+	RETURN
+; End TurnRight90Degrees
+;***************************************************************
+
 
 ;***************************************************************
 ; TurnLeft90Degrees
@@ -286,12 +284,12 @@ TurnLeft90:
 	LOADI	0
 	STORE	DVEL
 
-CheckAngle90:
+CheckAngleLeft90:
 	IN     Theta
 	ADDI   -90
 	CALL   Abs         ; get abs(currentAngle - 90)
 	ADDI   -3
-	JPOS   CheckAngle90    ; if angle error > 3, keep checking
+	JPOS   CheckAngleLeft90    ; if angle error > 3, keep checking
 	; at this point, robot should be within 3 degrees of 90
 	RETURN
 	
