@@ -127,8 +127,8 @@ Found:
 	JPOS    Stop
 	JUMP    Found
 Stop:
-	LOAD   Zero
-	STORE  DVel
+	;LOAD   Zero
+	;STORE  DVel
 ;***************************************************************
 ; END FIND CODE
 ;***************************************************************
@@ -254,8 +254,8 @@ TurnRight90:
 	STORE	StartTheta
 	LOADI	270
 	STORE	DTHETA
-	LOADI	0
-	STORE	DVEL
+	;LOADI	0
+	;STORE	DVEL
 
 CheckAngleRight90:
 	IN		Theta
@@ -281,8 +281,8 @@ TurnLeft90:
 	
 	LOADI	85
 	STORE	DTHETA
-	LOADI	0
-	STORE	DVEL
+	;LOADI	0
+	;STORE	DVEL
 
 CheckAngleLeft90:
 	IN     Theta
