@@ -88,7 +88,7 @@ Find:
 	OUT	   SONAREN
 	;LOADI   100
 	LOAD	FMid
-	STORE  DVel
+	STORE  	DVel
 FindLoop:
 	IN		SONALARM
 	ADDI	-32
@@ -164,7 +164,7 @@ CheckAngleCW:
 	;JNEG 	Turn90
 	
 EndCheckAngle:
-	;OUT		RESETPOS
+	OUT		RESETPOS
 ;***************************************************************
 ; END TURN AND FACE CODE
 ;***************************************************************
@@ -215,13 +215,19 @@ FinMove1:
 	OUT		SSEG1
 	OUT		RESETPOS
 	CALL	TurnLeft90
+	OUT		RESETPOS
 ;circle code from notepad
 	CLI    &B0010
+	OUT		RESETPOS
 Circle:
+	LOADI	1
+	OUT		SSEG2
     IN     THETA
     ADDI   30
     STORE  STARTTHETA
 CircleLoop:
+	LOADI	2
+	OUT		SSEG2
 	LOADI  511
 	OUT    LVELCMD
 	ADDI   -220
@@ -240,6 +246,7 @@ CircleEnd:
 ;* START RETURN TO LINE CODE
 	LOADI	5
 	OUT		SSEG1
+	OUT		RESETPOS
 ; assumes robot is facing reflector
 	;LOAD	s2dist
 	;OUT		SONALARM
