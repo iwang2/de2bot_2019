@@ -152,7 +152,7 @@ EndCheckAngle:
 ;***************************************************************
 ; END TURN AND FACE CODE
 ;***************************************************************
-	CLI    &B0010 ; disable movement API
+	;CLI    &B0010 ; disable movement API
 
 ;***************************************************************
 	LOADI	3
@@ -185,14 +185,14 @@ LoopMove1:
 	
 FinMove1:
 	LOADI	0
-	OUT		SONAREN		; turn off sensors
 	STORE	DVEL
+	OUT		SONAREN		; turn off sensors
 
 ;***************************************************************
 ;START CIRCLE CODE
 	CALL	TurnLeft90
 ;circle code from notepad
-	
+	CLI    &B0010
 Circle:
     IN     THETA
     ADDI   30
