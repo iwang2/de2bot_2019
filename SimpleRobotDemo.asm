@@ -142,13 +142,11 @@ Stop:
 	IN		Theta
 	STORE	StartTheta
 	CALL	TurnRight90
-	
-EndCheckAngle:
-	OUT		RESETPOS
 ;***************************************************************
 ; END TURN AND FACE CODE
 ;***************************************************************
 	CLI    &B0010 ; disable movement API
+	OUT		RESETPOS
 
 ;***************************************************************
 	LOADI	3
@@ -185,7 +183,6 @@ FinMove1:
 	IN		XPOS
 	STORE	linedist	; store odometry distance traveled from line
 	
-	
 	LOADI	0
 	OUT		SONAREN		; turn off sensors
 
@@ -195,7 +192,8 @@ FinMove1:
 	OUT		SSEG1
 	OUT		RESETPOS
 	CALL	TurnLeft90
-	OUT		RESETPOS
+	
+	;OUT		RESETPOS
 ;circle code from notepad
 	CLI    &B0010
 	OUT		RESETPOS
@@ -203,7 +201,7 @@ Circle:
 	LOADI	1
 	OUT		SSEG2
     IN     THETA
-    ADDI   30
+    ADDI   10
     STORE  STARTTHETA
 CircleLoop:
 	LOADI	2
@@ -231,6 +229,8 @@ CircleEnd:
 	OUT		RESETPOS
 	
 CheckDist:
+	LOADI	1
+	OUT		SSEG2
 	IN		XPOS
 	SUB		linedist
 	JPOS	TurnBack
@@ -240,6 +240,9 @@ CheckDist:
 	JUMP	CheckDist
 
 TurnBack:
+	LOADI	2
+	OUT		SSEG2
+	OUT		RESETPOS
 	SEI		&B0010
 	CALL 	TurnRight90
 	JUMP	Find
@@ -258,12 +261,16 @@ TurnRight90:
 	STORE	DVEL
 
 CheckAngleRight90:
+	LOADI	8
+	OUT		SSEG2
 	IN		Theta
 	SUB		StartTheta
 	ADDI	-270
 	CALL	ABS
-	ADDI	-3
+	ADDI	-5
 	JPOS	CheckAngleRight90
+	LOADI	9
+	OUT		SSEG2
 	RETURN
 ; End TurnRight90Degrees
 ;***************************************************************
@@ -285,12 +292,16 @@ TurnLeft90:
 	STORE	DVEL
 
 CheckAngleLeft90:
+	LOADI	8
+	OUT		SSEG2
 	IN     Theta
 	ADDI   -90
 	CALL   Abs         ; get abs(currentAngle - 90)
-	ADDI   -3
+	ADDI   -5
 	JPOS   CheckAngleLeft90    ; if angle error > 3, keep checking
 	; at this point, robot should be within 3 degrees of 90
+	LOADI	9
+	OUT		SSEG2
 	RETURN
 	
 ; End TurnLeft90Degrees
