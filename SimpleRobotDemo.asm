@@ -74,12 +74,11 @@ WaitForUser:
 Find:
 	LOADI	1
 	OUT		SSEG1
+	OUT		RESETPOS
 	
 	LOAD	ZERO
 	ADDI	610
 	ADDI	609
-	;ADDI	610
-	;ADDI	609
 	OUT		SONALARM
 	STORE	FOUNDREFLECTOR
 	
@@ -98,27 +97,13 @@ FindLoop:
 GetClose:
 	IN		DIST4
 	STORE 	FOUNDREFLECTOR
-	;ADDI	-610
-	;ADDI 	-609
-	;JPOS	GetClose
 GoForward:
 	IN 		DIST5
 	SUB		FOUNDREFLECTOR
-	ADDI	20
+	ADDI	30
 	OUT		SSEG1
 	JNEG	Stop
 	JUMP	GoForward
-	;OUT		SSEG1
-	;SUB		FOUNDREFLECTOR
-	;ADDI	-95
-	;JPOS	Stop
-	;ADDI	95
-	;ADD		FOUNDREFLECTOR
-	;STORE	FOUNDREFLECTOR
-	;JUMP	GetClose
-	;IN		SONALARM
-	;JZERO	Stop
-	;JUMP	GetClose
 Found:
 	LOAD	FOUNDREFLECTOR
 	ADDI	1
@@ -129,6 +114,9 @@ Found:
 Stop:
 	LOAD   Zero
 	STORE  DVel
+	LOAD	XPOS
+	ADD		TRAVELED
+	STORE	TRAVELED
 ;***************************************************************
 ; END FIND CODE
 ;***************************************************************
@@ -156,8 +144,6 @@ Move1:
 	LOAD	MASK2
 	;OR		MASK3
 	OUT		SONAREN
-	IN		DIST2
-	OUT		s2dist		; store distance from reflector to s2
 	
 	LOADI	305			; 305 mm = 1 ft
 	;ADDI	145
@@ -173,7 +159,7 @@ LoopMove1:
 	;JZERO	FinMove1
 	
 	; else, move forward again
-	LOADI	100
+	LOADI	200
 	OUT		LVELCMD
 	OUT		RVELCMD
 	JUMP	LoopMove1
@@ -182,6 +168,11 @@ FinMove1:
 	;JUMP	FinMove1
 	IN		XPOS
 	STORE	linedist	; store odometry distance traveled from line
+	ADD		LINEDIST
+	ADD		LINEDIST
+	STORE	d16sN
+	SHIFT	-2
+	STORE	LINEDIST
 	
 	LOADI	0
 	OUT		SONAREN		; turn off sensors
@@ -229,9 +220,8 @@ CircleEnd:
 	OUT		RESETPOS
 	
 CheckDist:
-	LOADI	1
-	OUT		SSEG2
 	IN		XPOS
+	OUT		SSEG2
 	SUB		linedist
 	JPOS	TurnBack
 	LOADI	200
@@ -240,8 +230,6 @@ CheckDist:
 	JUMP	CheckDist
 
 TurnBack:
-	LOADI	2
-	OUT		SSEG2
 	OUT		RESETPOS
 	SEI		&B0010
 	CALL 	TurnRight90
@@ -255,22 +243,18 @@ TurnBack:
 TurnRight90:
 	IN		Theta
 	STORE	StartTheta
-	LOADI	270
+	LOADI	275
 	STORE	DTHETA
 	LOADI	0
 	STORE	DVEL
 
 CheckAngleRight90:
-	LOADI	8
-	OUT		SSEG2
 	IN		Theta
 	SUB		StartTheta
-	ADDI	-270
+	ADDI	-275
 	CALL	ABS
 	ADDI	-5
 	JPOS	CheckAngleRight90
-	LOADI	9
-	OUT		SSEG2
 	RETURN
 ; End TurnRight90Degrees
 ;***************************************************************
@@ -286,22 +270,18 @@ TurnLeft90:
 	SEI    &B0010      ; enable interrupts from source 2 (timer)
 	OUT		RESETPOS
 	
-	LOADI	85
+	LOADI	80
 	STORE	DTHETA
 	LOADI	0
 	STORE	DVEL
 
 CheckAngleLeft90:
-	LOADI	8
-	OUT		SSEG2
 	IN     Theta
 	ADDI   -90
 	CALL   Abs         ; get abs(currentAngle - 90)
 	ADDI   -5
 	JPOS   CheckAngleLeft90    ; if angle error > 3, keep checking
 	; at this point, robot should be within 3 degrees of 90
-	LOADI	9
-	OUT		SSEG2
 	RETURN
 	
 ; End TurnLeft90Degrees
@@ -392,7 +372,7 @@ Forever:
 ; Timer ISR.  Currently just calls the movement control code.
 ; You could, however, do additional tasks here if desired.
 CTimer_ISR:
-	;CALL   CheckForWall
+	CALL   CheckForWall
 	CALL   ControlMovement
 	RETI   ; return from ISR
 	
@@ -400,8 +380,8 @@ CTimer_ISR:
 ; Reached wall interrupt code
 ;***********************************************************
 CheckForWall:
-	IN		XPOS
-	OUT		SSEG1
+	IN		TRAVELED
+	OUT		SSEG2
 	ADDI   	-610
 	ADDI   	-610
 	ADDI   	-610
@@ -996,6 +976,7 @@ StartTheta:		DW 0
 linedist:	DW 0
 s2dist:		DW 0
 s3dist:		DW 0
+TRAVELED:	DW 0
 
 ;***************************************************************
 ;* Constants
