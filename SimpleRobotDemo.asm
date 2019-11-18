@@ -67,6 +67,7 @@ WaitForUser:
 	OUT    CTIMER      ; turn on timer peripheral
 	SEI    &B0010      ; enable interrupts from source 2 (timer)
 	
+	;JUMP	CircleCenter
 
 ;***************************************************************
 ; START FIND CODE
@@ -82,14 +83,15 @@ Find:
 	OUT		SONALARM
 	STORE	FOUNDREFLECTOR
 	
-	LOADI  32
-	;LOAD	MASK5
-	;OR		MASK6
-	OUT	   SONAREN
+	LOADI  	MASK5
+	OR		MASK2
+	OR		MASK3
+	OUT		SONAREN
 	;LOADI   100
 	LOAD	FMid
 	STORE  	DVel
 FindLoop:
+	CALL	CHECKFRONT
 	IN		SONALARM
 	ADDI	-32
 	JZERO	GetClose
@@ -98,22 +100,16 @@ GetClose:
 	IN		DIST4
 	STORE 	FOUNDREFLECTOR
 GoForward:
+	CALL	CHECKFRONT
 	IN 		DIST5
 	SUB		FOUNDREFLECTOR
 	ADDI	30
 	OUT		SSEG1
 	JNEG	Stop
 	JUMP	GoForward
-Found:
-	LOAD	FOUNDREFLECTOR
-	ADDI	1
-	STORE   FOUNDREFLECTOR
-	ADDI    -10
-	JPOS    Stop
-	JUMP    Found
 Stop:
-	LOAD   Zero
-	STORE  DVel
+	LOADI	0
+	STORE	DVel
 	LOAD	XPOS
 	ADD		TRAVELED
 	STORE	TRAVELED
@@ -189,14 +185,10 @@ FinMove1:
 	CLI    &B0010
 	OUT		RESETPOS
 Circle:
-	LOADI	1
-	OUT		SSEG2
     IN     THETA
     ADDI   10
     STORE  STARTTHETA
 CircleLoop:
-	LOADI	2
-	OUT		SSEG2
 	LOADI  511
 	OUT    LVELCMD
 	ADDI   -220
@@ -239,6 +231,78 @@ TurnBack:
 ;***************************************************************
 
 ;***************************************************************
+;* START CENTER CIRCLE CODE
+CircleCenter:
+	LOADI	6
+	OUT		SSEG1
+	IN		XPOS
+	ADD		TRAVELED
+	STORE	TRAVELED
+	OUT		RESETPOS
+	CALL	TurnLeft90
+	LOADI	7
+	OUT		SSEG1
+	CLI		&B0010
+	OUT		RESETPOS
+	IN		THETA
+    ADDI	10
+    STORE	STARTTHETA
+CircleCenterLoop:
+	LOADI	511
+	OUT		LVELCMD
+	ADDI	-220
+    OUT		RVELCMD
+    IN		THETA
+    SUB		STARTTHETA
+    OUT		SSEG2
+    JZERO	CircleHalfStart
+    JUMP	CircleCenterLoop
+CircleHalfStart:   
+	OUT		RESETPOS
+	IN		THETA
+    ADDI	175
+    STORE	STARTTHETA
+CircleHalfLoop:
+	LOADI  511
+	OUT    LVELCMD
+	ADDI   -220
+    OUT    RVELCMD
+    
+    IN     THETA
+    SUB    STARTTHETA
+    OUT    SSEG2
+    JZERO  CircleHalfEnd
+    JUMP   CircleHalfLoop
+CircleHalfEnd:
+	IN		XPOS
+	ADD		TRAVELED
+	STORE	TRAVELED
+	OUT		RESETPOS
+	;CALL	TurnLeft90
+	;CLI    &B0010
+	OUT		RESETPOS
+	JUMP	Find
+	
+;* END CENTER CIRCLE CODE
+;***************************************************************
+
+;***************************************************************
+; CHECK FRONT CODE
+CheckFront:
+	IN		DIST2
+	ADDI	-305
+	JPOS	FindLoop
+	IN		DIST3
+	ADDI	-305
+	JPOS	EndCheckFront
+	CALL	CircleCenter
+	JUMP 	Find
+EndCheckFront:
+	RETURN
+; END CHECK FRONT CODE
+;***************************************************************
+	
+;***************************************************************
 ; TurnRight90Degrees
 TurnRight90:
 	IN		Theta
@@ -263,25 +327,22 @@ CheckAngleRight90:
 ;***************************************************************
 ; TurnLeft90Degrees
 TurnLeft90:
-	;OUT    RESETPOS    ; reset the odometry to 0,0,0
-	; configure timer interrupt for the movement control code
-	;LOADI  10          ; period = (10 ms * 10) = 0.1s, or 10Hz.
-	;OUT    CTIMER      ; turn on timer peripheral
-	SEI    &B0010      ; enable interrupts from source 2 (timer)
+	SEI		&B0010
 	OUT		RESETPOS
-	
+	IN		Theta
+	STORE	StartTheta
 	LOADI	80
 	STORE	DTHETA
 	LOADI	0
 	STORE	DVEL
 
 CheckAngleLeft90:
-	IN     Theta
-	ADDI   -90
-	CALL   Abs         ; get abs(currentAngle - 90)
-	ADDI   -5
-	JPOS   CheckAngleLeft90    ; if angle error > 3, keep checking
-	; at this point, robot should be within 3 degrees of 90
+	IN     	Theta
+	SUB		StartTheta
+	ADDI   	-80
+	CALL	Abs
+	ADDI	-5
+	JPOS	CheckAngleLeft90
 	RETURN
 	
 ; End TurnLeft90Degrees
