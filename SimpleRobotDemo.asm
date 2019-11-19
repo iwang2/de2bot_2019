@@ -90,6 +90,17 @@ Find:
 	;LOADI   100
 	LOAD	FMid
 	STORE  	DVel
+CheckForWall:
+	LOAD	TRAVELED
+	ADDI	-610
+	ADDI	-610
+	ADDI	-610
+	ADDI	-610
+	ADDI	-610
+	ADDI	-610
+	ADDI	-610
+	ADDI	-305
+	JPOS	TurnAtEnd
 FindLoop:
 	LOADI	1
 	OUT		SSEG2
@@ -118,7 +129,7 @@ Stop:
 	OUT		SSEG2
 	LOADI	0
 	STORE	DVel
-	LOAD	XPOS
+	IN		XPOS
 	ADD		TRAVELED
 	STORE	TRAVELED
 ;***************************************************************
@@ -464,7 +475,7 @@ CTimer_ISR:
 ;***********************************************************
 ; Reached wall interrupt code
 ;***********************************************************
-CheckForWall:
+CheckForWallI:
 	IN		TRAVELED
 	OUT		SSEG2
 	ADDI   	-610
@@ -501,9 +512,12 @@ ReachedStart:
 ; Turn at end code
 ;************************************************************
 TurnAtEnd:
-	LOADI  	180
-	STORE	DTheta
-	RETURN
+	CALL	TurnLeft90
+	CALL	TurnLeft90
+	LOADI	0
+	STORE	TRAVELED
+	OUT		RESETPOS
+	JUMP	Find
 ;************************************************************
 ; End turn at end code
 ;************************************************************
