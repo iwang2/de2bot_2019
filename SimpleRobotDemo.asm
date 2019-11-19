@@ -90,6 +90,17 @@ Find:
 	;LOADI   100
 	LOAD	FMid
 	STORE  	DVel
+CheckForWall:
+	LOAD	TRAVELED
+	ADDI	-610
+	ADDI	-610
+	ADDI	-610
+	ADDI	-610
+	ADDI	-610
+	ADDI	-610
+	;ADDI	-610
+	;ADDI	-305
+	JPOS	TurnAtEnd
 FindLoop:
 	LOADI	1
 	OUT		SSEG2
@@ -118,7 +129,7 @@ Stop:
 	OUT		SSEG2
 	LOADI	0
 	STORE	DVel
-	LOAD	XPOS
+	IN		XPOS
 	ADD		TRAVELED
 	STORE	TRAVELED
 ;***************************************************************
@@ -137,30 +148,28 @@ Stop:
 ;***************************************************************
 ; END TURN AND FACE CODE
 ;***************************************************************
-	CLI    &B0010 ; disable movement API
-	OUT		RESETPOS
 
 ;***************************************************************
 	LOADI	3
 	OUT		SSEG1
+	
+	CLI		&B0010 ; disable movement API
+	OUT		RESETPOS
 ; GO UNTIL WITHIN 1 FT CODE
 Move1:
 	LOAD	MASK2
-	;OR		MASK3
+	OR		MASK3
 	OUT		SONAREN
-	
-	LOADI	305			; 305 mm = 1 ft
-	;ADDI	145
-	OUT		SONALARM
 
 LoopMove1:
 	; if object within 1.5 ft in front, stop
-	IN		SONALARM
-	SUB		MASK2
-	JZERO	FinMove1
-	;ADD		MASK1
-	;SUB		MASK2
-	;JZERO	FinMove1
+	IN		DIST2
+	ADDI	-350
+	JNEG	FinMove1
+	
+	IN		DIST3
+	ADDI	-350
+	JNEG	FINMOVE1
 	
 	; else, move forward again
 	LOADI	200
@@ -172,10 +181,10 @@ FinMove1:
 	;JUMP	FinMove1
 	IN		XPOS
 	STORE	linedist	; store odometry distance traveled from line
-	ADD		LINEDIST
-	ADD		LINEDIST
-	STORE	d16sN
-	SHIFT	-2
+	;ADD		LINEDIST
+	;ADD		LINEDIST
+	;STORE	d16sN
+	SHIFT	-1
 	STORE	LINEDIST
 	
 	LOADI	0
@@ -270,7 +279,7 @@ CircleCenter:
 CircleCenterLoop:
 	LOADI	511
 	OUT		LVELCMD
-	ADDI	-220
+	ADDI	-210
     OUT		RVELCMD
     IN		THETA
     SUB		STARTTHETA
@@ -280,12 +289,12 @@ CircleCenterLoop:
 CircleHalfStart:   
 	OUT		RESETPOS
 	IN		THETA
-    ADDI	180
+    ADDI	210
     STORE	STARTTHETA
 CircleHalfLoop:
 	LOADI  511
 	OUT    LVELCMD
-	ADDI   -220
+	ADDI   -210
     OUT    RVELCMD
     
     IN     THETA
@@ -294,7 +303,8 @@ CircleHalfLoop:
     JZERO  CircleHalfEnd
     JUMP   CircleHalfLoop
 CircleHalfEnd:
-	IN		XPOS
+	IN		YPOS
+	CALL	ABS
 	ADD		TRAVELED
 	STORE	TRAVELED
 	OUT		RESETPOS
@@ -331,7 +341,7 @@ TurnRight90:
 	OUT		RESETPOS
 	IN		Theta
 	STORE	StartTheta
-	LOADI	275
+	LOADI	270
 	STORE	DTHETA
 	LOADI	0
 	STORE	DVEL
@@ -339,7 +349,7 @@ TurnRight90:
 CheckAngleRight90:
 	IN		Theta
 	SUB		StartTheta
-	ADDI	-275
+	ADDI	-270
 	CALL	ABS
 	ADDI	-5
 	JPOS	CheckAngleRight90
@@ -355,7 +365,7 @@ TurnLeft90:
 	OUT		RESETPOS
 	IN		Theta
 	STORE	StartTheta
-	LOADI	80
+	LOADI	85
 	STORE	DTHETA
 	LOADI	0
 	STORE	DVEL
@@ -363,7 +373,7 @@ TurnLeft90:
 CheckAngleLeft90:
 	IN     	Theta
 	SUB		StartTheta
-	ADDI   	-80
+	ADDI   	-85
 	CALL	Abs
 	ADDI	-5
 	JPOS	CheckAngleLeft90
@@ -464,7 +474,7 @@ CTimer_ISR:
 ;***********************************************************
 ; Reached wall interrupt code
 ;***********************************************************
-CheckForWall:
+CheckForWallI:
 	IN		TRAVELED
 	OUT		SSEG2
 	ADDI   	-610
@@ -501,9 +511,12 @@ ReachedStart:
 ; Turn at end code
 ;************************************************************
 TurnAtEnd:
-	LOADI  	180
-	STORE	DTheta
-	RETURN
+	CALL	TurnLeft90
+	CALL	TurnLeft90
+	LOADI	0
+	STORE	TRAVELED
+	OUT		RESETPOS
+	JUMP	Find
 ;************************************************************
 ; End turn at end code
 ;************************************************************
