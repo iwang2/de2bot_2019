@@ -194,7 +194,7 @@ FinMove1:
 	OUT		RESETPOS
 Circle:
     IN     THETA
-    ADDI   15
+    ADDI   30
     STORE  STARTTHETA
 CircleLoop:
 	LOADI  511
@@ -233,7 +233,14 @@ TurnBack:
 	OUT		RESETPOS
 	SEI		&B0010
 	CALL 	TurnRight90
-	JUMP	Find
+	OUT		RESETPOS
+	LOAD	FMid
+	STORE	DVel
+DriveForward:
+	IN		XPOS
+	ADDI	-100
+	JPOS	Find
+	JUMP	DriveForward
 
 ;* END RETURN TO LINE CODE
 ;***************************************************************
@@ -268,7 +275,7 @@ CircleCenterLoop:
 CircleHalfStart:   
 	OUT		RESETPOS
 	IN		THETA
-    ADDI	150
+    ADDI	180
     STORE	STARTTHETA
 CircleHalfLoop:
 	LOADI  511
@@ -286,7 +293,7 @@ CircleHalfEnd:
 	ADD		TRAVELED
 	STORE	TRAVELED
 	OUT		RESETPOS
-	;CALL	TurnLeft90
+	CALL	TurnLeft90
 	;CLI    &B0010
 	OUT		RESETPOS
 	SEI		&B0010
@@ -309,8 +316,7 @@ CheckFront:
 	RETURN
 	
 EndCheckFront:
-	CALL	CircleCenter
-	JUMP 	Find
+	JUMP	CircleCenter
 ; END CHECK FRONT CODE
 ;***************************************************************
 	
