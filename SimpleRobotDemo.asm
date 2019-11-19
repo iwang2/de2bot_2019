@@ -93,7 +93,8 @@ Find:
 FindLoop:
 	CALL	CHECKFRONT
 	IN		SONALARM
-	ADDI	-32
+	AND		MASK5
+	SUB		MASK5
 	JZERO	GetClose
 	JUMP 	FindLoop
 GetClose:
