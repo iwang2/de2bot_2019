@@ -215,6 +215,8 @@ CircleEnd:
 ;* START RETURN TO LINE CODE
 	LOADI	5
 	OUT		SSEG1
+	LOAD	ZERO
+	STORE	DTHETA
 	CALL	TurnLeft90
 	CLI		&B0010
 	OUT		RESETPOS
@@ -236,10 +238,13 @@ TurnBack:
 	OUT		RESETPOS
 	LOAD	FMid
 	STORE	DVel
+	LOAD	Zero
+	STORE	DTheta
 DriveForward:
 	IN		XPOS
 	ADDI	-100
 	JPOS	Find
+	;JUMP	INFLOOP
 	JUMP	DriveForward
 
 ;* END RETURN TO LINE CODE
@@ -350,7 +355,7 @@ TurnLeft90:
 	OUT		RESETPOS
 	IN		Theta
 	STORE	StartTheta
-	LOADI	85
+	LOADI	80
 	STORE	DTHETA
 	LOADI	0
 	STORE	DVEL
@@ -358,7 +363,7 @@ TurnLeft90:
 CheckAngleLeft90:
 	IN     	Theta
 	SUB		StartTheta
-	ADDI   	-85
+	ADDI   	-80
 	CALL	Abs
 	ADDI	-5
 	JPOS	CheckAngleLeft90
