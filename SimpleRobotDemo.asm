@@ -83,7 +83,7 @@ Find:
 	OUT		SONALARM
 	STORE	FOUNDREFLECTOR
 	
-	LOADI  	MASK5
+	LOAD  	MASK5
 	OR		MASK2
 	OR		MASK3
 	OUT		SONAREN
@@ -91,13 +91,18 @@ Find:
 	LOAD	FMid
 	STORE  	DVel
 FindLoop:
-	CALL	CHECKFRONT
+	LOADI	1
+	OUT		SSEG2
 	IN		SONALARM
+	OUT		SSEG2
 	AND		MASK5
 	SUB		MASK5
 	JZERO	GetClose
+	CALL	CHECKFRONT
 	JUMP 	FindLoop
 GetClose:
+	LOADI	2
+	OUT		SSEG2
 	IN		DIST4
 	STORE 	FOUNDREFLECTOR
 GoForward:
@@ -109,6 +114,8 @@ GoForward:
 	JNEG	Stop
 	JUMP	GoForward
 Stop:
+	LOADI	3
+	OUT		SSEG2
 	LOADI	0
 	STORE	DVel
 	LOAD	XPOS
@@ -187,7 +194,7 @@ FinMove1:
 	OUT		RESETPOS
 Circle:
     IN     THETA
-    ADDI   10
+    ADDI   15
     STORE  STARTTHETA
 CircleLoop:
 	LOADI  511
@@ -246,7 +253,7 @@ CircleCenter:
 	CLI		&B0010
 	OUT		RESETPOS
 	IN		THETA
-    ADDI	10
+    ADDI	15
     STORE	STARTTHETA
 CircleCenterLoop:
 	LOADI	511
@@ -261,7 +268,7 @@ CircleCenterLoop:
 CircleHalfStart:   
 	OUT		RESETPOS
 	IN		THETA
-    ADDI	175
+    ADDI	150
     STORE	STARTTHETA
 CircleHalfLoop:
 	LOADI  511
@@ -282,6 +289,7 @@ CircleHalfEnd:
 	;CALL	TurnLeft90
 	;CLI    &B0010
 	OUT		RESETPOS
+	SEI		&B0010
 	JUMP	Find
 	
 ;* END CENTER CIRCLE CODE
@@ -292,20 +300,24 @@ CircleHalfEnd:
 CheckFront:
 	IN		DIST2
 	ADDI	-305
-	JPOS	FindLoop
+	ADDI	-150
+	JNEG	EndCheckFront
 	IN		DIST3
 	ADDI	-305
-	JPOS	EndCheckFront
+	ADDI	-150
+	JNEG	EndCheckFront
+	RETURN
+	
+EndCheckFront:
 	CALL	CircleCenter
 	JUMP 	Find
-EndCheckFront:
-	RETURN
 ; END CHECK FRONT CODE
 ;***************************************************************
 	
 ;***************************************************************
 ; TurnRight90Degrees
 TurnRight90:
+	OUT		RESETPOS
 	IN		Theta
 	STORE	StartTheta
 	LOADI	275
@@ -332,7 +344,7 @@ TurnLeft90:
 	OUT		RESETPOS
 	IN		Theta
 	STORE	StartTheta
-	LOADI	80
+	LOADI	85
 	STORE	DTHETA
 	LOADI	0
 	STORE	DVEL
@@ -340,7 +352,7 @@ TurnLeft90:
 CheckAngleLeft90:
 	IN     	Theta
 	SUB		StartTheta
-	ADDI   	-80
+	ADDI   	-85
 	CALL	Abs
 	ADDI	-5
 	JPOS	CheckAngleLeft90
@@ -434,7 +446,7 @@ Forever:
 ; Timer ISR.  Currently just calls the movement control code.
 ; You could, however, do additional tasks here if desired.
 CTimer_ISR:
-	CALL   CheckForWall
+	;CALL   CheckForWall
 	CALL   ControlMovement
 	RETI   ; return from ISR
 	
