@@ -92,6 +92,7 @@ Find:
 	STORE  	DVel
 CheckForWall:
 	LOAD	TRAVELED
+	OUT		SSEG2
 	ADDI	-610
 	ADDI	-610
 	ADDI	-610
@@ -99,21 +100,16 @@ CheckForWall:
 	ADDI	-610
 	ADDI	-610
 	;ADDI	-610
-	;ADDI	-305
+	ADDI	-150
 	JPOS	TurnAtEnd
 FindLoop:
-	LOADI	1
-	OUT		SSEG2
 	IN		SONALARM
-	OUT		SSEG2
 	AND		MASK5
 	SUB		MASK5
 	JZERO	GetClose
 	CALL	CHECKFRONT
 	JUMP 	FindLoop
 GetClose:
-	LOADI	2
-	OUT		SSEG2
 	IN		DIST4
 	STORE 	FOUNDREFLECTOR
 GoForward:
@@ -121,12 +117,9 @@ GoForward:
 	IN 		DIST5
 	SUB		FOUNDREFLECTOR
 	ADDI	30
-	OUT		SSEG1
 	JNEG	Stop
 	JUMP	GoForward
 Stop:
-	LOADI	3
-	OUT		SSEG2
 	LOADI	0
 	STORE	DVel
 	IN		XPOS
@@ -195,7 +188,7 @@ FinMove1:
 	LOADI	4
 	OUT		SSEG1
 	OUT		RESETPOS
-	CALL	TurnLeft90
+	CALL	TurnLeft70
 	
 	;OUT		RESETPOS
 ;circle code from notepad
@@ -203,12 +196,13 @@ FinMove1:
 	OUT		RESETPOS
 Circle:
     IN     THETA
-    ADDI   30
+    ADDI   35
+    ;ADDI   30
     STORE  STARTTHETA
 CircleLoop:
 	LOADI  511
 	OUT    LVELCMD
-	ADDI   -220
+	ADDI   -210
     OUT    RVELCMD
     IN     THETA
     SUB    STARTTHETA
@@ -268,9 +262,7 @@ CircleCenter:
 	ADD		TRAVELED
 	STORE	TRAVELED
 	OUT		RESETPOS
-	CALL	TurnLeft90
-	LOADI	7
-	OUT		SSEG1
+	CALL	TurnLeft70
 	CLI		&B0010
 	OUT		RESETPOS
 	IN		THETA
@@ -289,7 +281,7 @@ CircleCenterLoop:
 CircleHalfStart:   
 	OUT		RESETPOS
 	IN		THETA
-    ADDI	210
+    ADDI	200
     STORE	STARTTHETA
 CircleHalfLoop:
 	LOADI  511
@@ -334,6 +326,7 @@ EndCheckFront:
 	JUMP	CircleCenter
 ; END CHECK FRONT CODE
 ;***************************************************************
+
 	
 ;***************************************************************
 ; TurnRight90Degrees
@@ -365,7 +358,7 @@ TurnLeft90:
 	OUT		RESETPOS
 	IN		Theta
 	STORE	StartTheta
-	LOADI	85
+	LOADI	80
 	STORE	DTHETA
 	LOADI	0
 	STORE	DVEL
@@ -373,13 +366,37 @@ TurnLeft90:
 CheckAngleLeft90:
 	IN     	Theta
 	SUB		StartTheta
-	ADDI   	-85
+	ADDI   	-80
 	CALL	Abs
 	ADDI	-5
 	JPOS	CheckAngleLeft90
 	RETURN
 	
 ; End TurnLeft90Degrees
+;***************************************************************
+
+;***************************************************************
+; TurnLeft70Degrees
+TurnLeft70:
+	SEI		&B0010
+	OUT		RESETPOS
+	IN		Theta
+	STORE	StartTheta
+	LOADI	70
+	STORE	DTHETA
+	LOADI	0
+	STORE	DVEL
+
+CheckAngleLeft70:
+	IN     	Theta
+	SUB		StartTheta
+	ADDI   	-70
+	CALL	Abs
+	ADDI	-5
+	JPOS	CheckAngleLeft70
+	RETURN
+	
+; End TurnLeft70Degrees
 ;***************************************************************
 
 ;***************************************************************
@@ -494,8 +511,8 @@ ReachedEnd:
 	ADDI   	-610
 	ADDI   	-610
 	ADDI   	-610
-	ADDI   	-610
-	ADDI   	-610
+	;ADDI   	-610
+	;ADDI   	-610
 	JPOS   	ReachedStart
 	CALL   	TurnAtEnd
 	RETURN
